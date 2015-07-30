@@ -1,64 +1,58 @@
-<a name="2.0.0-alpha.32"></a>
-# 2.0.0-alpha.32 (2015-07-29)
+<a name"2.0.0-alpha.33"></a>
+### 2.0.0-alpha.33 (2015-07-30)
 
 
-### Bug Fixes
+#### Bug Fixes
 
-* **.d.ts:** Correct new Type interface return type ([78fdf9a](https://github.com/angular/angular/commit/78fdf9a)), closes [#2399](https://github.com/angular/angular/issues/2399) [#3316](https://github.com/angular/angular/issues/3316)
-* **build:** don't trigger travis on g3sync branch ([61b7703](https://github.com/angular/angular/commit/61b7703))
-* **change_detection:** convert interpolated null values to empty strings ([345fa52](https://github.com/angular/angular/commit/345fa52)), closes [#3007](https://github.com/angular/angular/issues/3007) [#3271](https://github.com/angular/angular/issues/3271)
-* **class:** allow class names with mixed case ([a8b5725](https://github.com/angular/angular/commit/a8b5725)), closes [#3001](https://github.com/angular/angular/issues/3001) [#3264](https://github.com/angular/angular/issues/3264)
-* **class:** correctly clean up on destroy ([1438922](https://github.com/angular/angular/commit/1438922)), closes [#3249](https://github.com/angular/angular/issues/3249) [#3256](https://github.com/angular/angular/issues/3256)
-* **compiler:** prevent race conditions ([5ec67ee](https://github.com/angular/angular/commit/5ec67ee)), closes [#3206](https://github.com/angular/angular/issues/3206) [#3211](https://github.com/angular/angular/issues/3211)
-* **core:** fix type error in setElementProperty ([448264b](https://github.com/angular/angular/commit/448264b)), closes [#3279](https://github.com/angular/angular/issues/3279)
-* **dart/transform:** Handle mixed lifecycle specs ([23cd385](https://github.com/angular/angular/commit/23cd385)), closes [#3276](https://github.com/angular/angular/issues/3276)
-* **element_injector:** do not throw when cannot find element when trying to report an error ([03c8e74](https://github.com/angular/angular/commit/03c8e74))
-* **lowercase,uppercase:** make stateless pipes ([4dc6d74](https://github.com/angular/angular/commit/4dc6d74)), closes [#3173](https://github.com/angular/angular/issues/3173) [#3189](https://github.com/angular/angular/issues/3189)
-* **presubmit:** corrected user/email for git push ([e40ff36](https://github.com/angular/angular/commit/e40ff36))
-* **projection:** allow more bound render elements than app elements. ([46502e4](https://github.com/angular/angular/commit/46502e4)), closes [#3236](https://github.com/angular/angular/issues/3236) [#3247](https://github.com/angular/angular/issues/3247)
-* **projection:** allow to project to a non text node ([b44b06c](https://github.com/angular/angular/commit/b44b06c)), closes [#3230](https://github.com/angular/angular/issues/3230) [#3241](https://github.com/angular/angular/issues/3241)
-* **query:** the view should not be visible to @Query. ([1d45029](https://github.com/angular/angular/commit/1d45029))
-* **style_url_resolver:** fix data: url resolution ([73b7d99](https://github.com/angular/angular/commit/73b7d99))
-* **transformer:** Don't throw on annotations that don't match a descriptor. ([f575ba6](https://github.com/angular/angular/commit/f575ba6)), closes [#3280](https://github.com/angular/angular/issues/3280)
-* **transformer:** Fix generation of `annotations` argument when registering functions. ([2faa898](https://github.com/angular/angular/commit/2faa898))
-* **transformer:** Loggers now are per zone and each transform runs in its own zone ([bd65b63](https://github.com/angular/angular/commit/bd65b63))
-* **typings:** test our .d.ts with --noImplicitAny ([19d8b22](https://github.com/angular/angular/commit/19d8b22))
-* **url_resolver:** in Dart make package urls relative to AppRootUrl ([469afda](https://github.com/angular/angular/commit/469afda))
-* addresses a couple ddc type errors ([f1e4292](https://github.com/angular/angular/commit/f1e4292))
-
-### Features
-
-* **benchmark:** add static_tree benchmark ([854b5b7](https://github.com/angular/angular/commit/854b5b7)), closes [#3196](https://github.com/angular/angular/issues/3196)
-* **bootstrap:** remove the need for explicit reflection setup in bootstrap code ([3531bb7](https://github.com/angular/angular/commit/3531bb7))
-* **build:** initial SauceLabs setup ([eebd736](https://github.com/angular/angular/commit/eebd736)), closes [#2347](https://github.com/angular/angular/issues/2347)
-* **change_detection:** generate checkNoChanges only in dev mode ([71bb4b3](https://github.com/angular/angular/commit/71bb4b3))
-* **change_detection:** provide error context for change detection errors ([c2bbda0](https://github.com/angular/angular/commit/c2bbda0))
-* **compiler:** introduce schema for elements ([d894aa9](https://github.com/angular/angular/commit/d894aa9)), closes [#3353](https://github.com/angular/angular/issues/3353)
-* **core:** provide an error context when an exception happens in an error handler ([8543c34](https://github.com/angular/angular/commit/8543c34))
-* **dart/transform:** Populate `lifecycle` from lifecycle interfaces ([8ad4ad5](https://github.com/angular/angular/commit/8ad4ad5)), closes [#3181](https://github.com/angular/angular/issues/3181)
-* **di:** added context to runtime DI errors ([5a86f85](https://github.com/angular/angular/commit/5a86f85))
-* **exception_handler:** change ExceptionHandler to output context ([fdf226a](https://github.com/angular/angular/commit/fdf226a))
-* **exception_handler:** print originalException and originalStack for all exceptions ([e744409](https://github.com/angular/angular/commit/e744409))
-* **http:** call complete on request complete ([6fac901](https://github.com/angular/angular/commit/6fac901)), closes [#2635](https://github.com/angular/angular/issues/2635)
-* **http.ts:** export BrowserXHR ([8a91d71](https://github.com/angular/angular/commit/8a91d71)), closes [#2641](https://github.com/angular/angular/issues/2641)
-* **lang:** added "context" to BaseException ([8ecb632](https://github.com/angular/angular/commit/8ecb632))
-* **router:** use querystring params for top-level routes ([fdffcab](https://github.com/angular/angular/commit/fdffcab)), closes [#3017](https://github.com/angular/angular/issues/3017)
-* **testability:** hook zone into whenstable api with async support ([a8b75c3](https://github.com/angular/angular/commit/a8b75c3))
-* **transformers:** directive aliases in Dart transformers (fix #1747) ([fd46b49](https://github.com/angular/angular/commit/fd46b49)), closes [#1747](https://github.com/angular/angular/issues/1747)
-* **url_resolver:** support package: urls (fixes #2991) ([408618b](https://github.com/angular/angular/commit/408618b)), closes [#2991](https://github.com/angular/angular/issues/2991)
-
-### Reverts
-
-* style(ngFor): add whitespace to `Directive` annotation ([74b311a](https://github.com/angular/angular/commit/74b311a))
+* addresses a couple ddc type errors ([f1e42920](https://github.com/angular/angular/commit/f1e42920))
+* **.d.ts:** Correct new Type interface return type ([78fdf9a1](https://github.com/angular/angular/commit/78fdf9a1), closes [#2399](https://github.com/angular/angular/issues/2399), [#3316](https://github.com/angular/angular/issues/3316))
+* **build:** don't trigger travis on g3sync branch ([61b77034](https://github.com/angular/angular/commit/61b77034))
+* **change_detection:** convert interpolated null values to empty strings ([345fa521](https://github.com/angular/angular/commit/345fa521), closes [#3007](https://github.com/angular/angular/issues/3007), [#3271](https://github.com/angular/angular/issues/3271))
+* **class:**
+  * allow class names with mixed case ([a8b57256](https://github.com/angular/angular/commit/a8b57256), closes [#3001](https://github.com/angular/angular/issues/3001), [#3264](https://github.com/angular/angular/issues/3264))
+  * correctly clean up on destroy ([1438922f](https://github.com/angular/angular/commit/1438922f), closes [#3249](https://github.com/angular/angular/issues/3249), [#3256](https://github.com/angular/angular/issues/3256))
+* **compiler:** prevent race conditions ([5ec67ee2](https://github.com/angular/angular/commit/5ec67ee2), closes [#3206](https://github.com/angular/angular/issues/3206), [#3211](https://github.com/angular/angular/issues/3211))
+* **core:** fix type error in setElementProperty ([448264be](https://github.com/angular/angular/commit/448264be), closes [#3279](https://github.com/angular/angular/issues/3279))
+* **element_injector:** do not throw when cannot find element when trying to report an error ([03c8e742](https://github.com/angular/angular/commit/03c8e742))
+* **presubmit:** corrected user/email for git push ([e40ff368](https://github.com/angular/angular/commit/e40ff368))
+* **projection:**
+  * allow more bound render elements than app elements. ([46502e4d](https://github.com/angular/angular/commit/46502e4d), closes [#3236](https://github.com/angular/angular/issues/3236), [#3247](https://github.com/angular/angular/issues/3247))
+  * allow to project to a non text node ([b44b06c2](https://github.com/angular/angular/commit/b44b06c2), closes [#3230](https://github.com/angular/angular/issues/3230), [#3241](https://github.com/angular/angular/issues/3241))
+* **query:** the view should not be visible to @Query. ([1d450294](https://github.com/angular/angular/commit/1d450294))
+* **transformer:**
+  * Fix generation of `annotations` argument when registering functions. ([2faa8985](https://github.com/angular/angular/commit/2faa8985))
+  * Don't throw on annotations that don't match a descriptor. ([f575ba60](https://github.com/angular/angular/commit/f575ba60), closes [#3280](https://github.com/angular/angular/issues/3280))
+  * Loggers now are per zone and each transform runs in its own zone ([bd65b63c](https://github.com/angular/angular/commit/bd65b63c))
+* **typings:** test our .d.ts with --noImplicitAny ([19d8b221](https://github.com/angular/angular/commit/19d8b221))
+* **url_resolver:** in Dart make package urls relative to AppRootUrl ([469afda5](https://github.com/angular/angular/commit/469afda5))
 
 
-### BREAKING CHANGES
+#### Features
 
-* View renderer used to take normalized CSS class names (ex. fooBar for foo-bar).
-With this change a rendered implementation gets a calss name as specified in a
-template, without any transformations / normalization. This change only affects
-custom view renderers that should be updated accordingly.
+* **benchmark:** add static_tree benchmark ([854b5b7d](https://github.com/angular/angular/commit/854b5b7d), closes [#3196](https://github.com/angular/angular/issues/3196))
+* **bootstrap:** remove the need for explicit reflection setup in bootstrap code ([3531bb71](https://github.com/angular/angular/commit/3531bb71))
+* **build:** initial SauceLabs setup ([eebd736c](https://github.com/angular/angular/commit/eebd736c), closes [#2347](https://github.com/angular/angular/issues/2347))
+* **change_detection:**
+  * generate checkNoChanges only in dev mode ([71bb4b3e](https://github.com/angular/angular/commit/71bb4b3e))
+  * provide error context for change detection errors ([c2bbda02](https://github.com/angular/angular/commit/c2bbda02))
+* **core:** provide an error context when an exception happens in an error handler ([8543c347](https://github.com/angular/angular/commit/8543c347))
+* **di:** added context to runtime DI errors ([5a86f859](https://github.com/angular/angular/commit/5a86f859))
+* **exception_handler:**
+  * print originalException and originalStack for all exceptions ([e744409c](https://github.com/angular/angular/commit/e744409c))
+  * change ExceptionHandler to output context ([fdf226ab](https://github.com/angular/angular/commit/fdf226ab))
+* **http:** call complete on request complete ([6fac9011](https://github.com/angular/angular/commit/6fac9011), closes [#2635](https://github.com/angular/angular/issues/2635))
+* **http.ts:** export BrowserXHR ([8a91d716](https://github.com/angular/angular/commit/8a91d716), closes [#2641](https://github.com/angular/angular/issues/2641))
+* **lang:** added "context" to BaseException ([8ecb632d](https://github.com/angular/angular/commit/8ecb632d))
+* **router:** use querystring params for top-level routes ([fdffcaba](https://github.com/angular/angular/commit/fdffcaba), closes [#3017](https://github.com/angular/angular/issues/3017))
+* **testability:** hook zone into whenstable api with async support ([a8b75c3d](https://github.com/angular/angular/commit/a8b75c3d))
+* **transformers:** directive aliases in Dart transformers (fix #1747) ([fd46b49e](https://github.com/angular/angular/commit/fd46b49e))
+* **url_resolver:** support package: urls () ([408618b8](https://github.com/angular/angular/commit/408618b8), closes [#2991](https://github.com/angular/angular/issues/2991))
 
+
+#### Breaking Changes
+
+* 
+View renderer used to take normalized CSS class names (ex. fooBar for foo-bar).
 * S:
 Dart applications and TypeScript applications meant to transpile to Dart must now
 import `package:angular2/bootstrap.dart` instead of `package:angular2/angular2.dart`
@@ -122,6 +116,71 @@ to `bootstrap` to `bootstrap_static.dart` and `bootstrapStatic` respectively.
 
 
 ### BREAKING CHANGES
+=======
+Closes #3264
+
+ ([a8b57256](https://github.com/angular/angular/commit/a8b57256))
+
+
+<a name"2.0.0-alpha.32"></a>
+### 2.0.0-alpha.32 (2015-07-22)
+
+
+#### Bug Fixes
+
+* **api_docs:**
+  * slightly more accurate description of Dart overrideOnEventDone ([a4915ad6](https://github.com/angular/angular/commit/a4915ad6))
+  * slightly more accurate description of TS overrideOnEventDone ([fe3a5596](https://github.com/angular/angular/commit/fe3a5596))
+* **build:** clang-format ([66ec4d1f](https://github.com/angular/angular/commit/66ec4d1f))
+* **change_detect:**
+  * Sort `DirectiveMetadata` properties during processing ([b2a0be87](https://github.com/angular/angular/commit/b2a0be87))
+  * Handle '$' in change detector strings ([f1e81769](https://github.com/angular/angular/commit/f1e81769))
+* **content_projection:** allow to project text nodes to a place without bindings ([a472eacc](https://github.com/angular/angular/commit/a472eacc), closes [#3163](https://github.com/angular/angular/issues/3163), [#3179](https://github.com/angular/angular/issues/3179))
+* **di:**
+  * fixed dynamic component loading of components created in child injector ([57496926](https://github.com/angular/angular/commit/57496926))
+  * fixed types ([2f08ed8d](https://github.com/angular/angular/commit/2f08ed8d))
+  * do not rely on the fact that types are canonicalized ([2147ce45](https://github.com/angular/angular/commit/2147ce45))
+  * instatiate services lazily ([7531b48d](https://github.com/angular/angular/commit/7531b48d))
+* **element_injector:** inject the containing change detector ref to directives ([7879761a](https://github.com/angular/angular/commit/7879761a))
+* **examples:** add a couple entrypoints, adjust pubspec, fix change detector bug in Dart ([b03560b6](https://github.com/angular/angular/commit/b03560b6))
+* **facade:** use base element to get base href ([8296dcec](https://github.com/angular/angular/commit/8296dcec))
+* **forms:**
+  * default the initial value of Control to null ([5b597de1](https://github.com/angular/angular/commit/5b597de1))
+  * do not reset the value of the input when it came from the view ([b1231593](https://github.com/angular/angular/commit/b1231593))
+* **html_adapter:** Implement hasAttribute and getAttribute. ([e988f59c](https://github.com/angular/angular/commit/e988f59c))
+* **ng_for:** fixed ng_for to pass a change detector ref to the pipe registry ([583c5ffc](https://github.com/angular/angular/commit/583c5ffc))
+* **publish:** add force flag for pub publish script ([621604dc](https://github.com/angular/angular/commit/621604dc), closes [#3077](https://github.com/angular/angular/issues/3077))
+* **renderer:** handle empty fragments correctly ([61c73576](https://github.com/angular/angular/commit/61c73576), closes [#3100](https://github.com/angular/angular/issues/3100))
+* **router:**
+  * improve error for missing base href ([011fab37](https://github.com/angular/angular/commit/011fab37), closes [#3096](https://github.com/angular/angular/issues/3096))
+  * throw when reserved characters used in route definition ([c6409cb6](https://github.com/angular/angular/commit/c6409cb6), closes [#3021](https://github.com/angular/angular/issues/3021))
+  * improve error messages for routes with no config ([8bdca5c0](https://github.com/angular/angular/commit/8bdca5c0), closes [#2323](https://github.com/angular/angular/issues/2323))
+* **transformers:** fix sort order for reflective imports ([762a94f2](https://github.com/angular/angular/commit/762a94f2))
+* **view_manager:** allow to create host views even if there is an embedded view at the same place. ([116b64de](https://github.com/angular/angular/commit/116b64de))
+
+
+#### Features
+
+* FunctionWithParamTokens.execute now returns the value of the function ([3dd05ef7](https://github.com/angular/angular/commit/3dd05ef7))
+* upgrade ts2dart to 0.6.9. ([3810e4be](https://github.com/angular/angular/commit/3810e4be))
+* **build:** require parameter types ([de18da2a](https://github.com/angular/angular/commit/de18da2a), closes [#2833](https://github.com/angular/angular/issues/2833))
+* **change_detection:** added support for ObservableList from package:observe ([d449ea5c](https://github.com/angular/angular/commit/d449ea5c))
+* **compiler:**
+  * Support $baseUrl in HTML attributes when loading a template. ([e9427094](https://github.com/angular/angular/commit/e9427094))
+  * attach components and project light dom during compilation. ([b1df5450](https://github.com/angular/angular/commit/b1df5450), closes [#2529](https://github.com/angular/angular/issues/2529))
+* **core:** add ability to reflect DOM properties as attributes ([903ff904](https://github.com/angular/angular/commit/903ff904), closes [#2910](https://github.com/angular/angular/issues/2910))
+* **facade:** add getTypeNameForDebugging function ([ccb41632](https://github.com/angular/angular/commit/ccb41632))
+* **forms:** Export NgSelectOption directive ([f74d97e1](https://github.com/angular/angular/commit/f74d97e1))
+* **http:** add support for JSONP requests ([81abc399](https://github.com/angular/angular/commit/81abc399), closes [#2905](https://github.com/angular/angular/issues/2905), [#2818](https://github.com/angular/angular/issues/2818))
+* **pipes:** changed .append to .extend ([4c8ea129](https://github.com/angular/angular/commit/4c8ea129))
+* **router:** add interfaces for route definitions in RouteConfig ([4d28167b](https://github.com/angular/angular/commit/4d28167b), closes [#2261](https://github.com/angular/angular/issues/2261))
+* **transformers:**
+  * implement initializing deferred libraries ([5cc84ed4](https://github.com/angular/angular/commit/5cc84ed4))
+  * expose DI transformer for use by packages ([2bc12174](https://github.com/angular/angular/commit/2bc12174), closes [#2814](https://github.com/angular/angular/issues/2814))
+
+
+#### Breaking Changes
+>>>>>>> 1eabee5... chore(release): release alpha.33
 
 *     Pipes.append has been renamed into Pipes.extend.
     Pipes.extend prepends pipe factories instead of appending them.
