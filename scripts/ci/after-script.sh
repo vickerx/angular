@@ -2,16 +2,22 @@
 set -e -o pipefail
 
 echo '*******************'
-echo '** AFTER_SUCCESS **'
+echo '** AFTER_SCRIPT **'
 echo '*******************'
+
+if [ "$MODE" = "saucelabs" ]; then
+  ./scripts/sauce/sauce_connect_teardown.sh
+fi
+if [ "$MODE" = "browserstack" ]; then
+  ./scripts/browserstack/teardown_tunnel.sh
+fi
 
 
 echo '---------------------'
 echo '-- WAIT FOR OTHERS --'
 echo '---------------------'
 
-curl -Lo travis_after_all.py https://raw.github.com/jbdeboer/travis_after_all/master/travis_after_all.py
-python travis_after_all.py
+python ./scripts/ci/travis_after_all.py
 . .to_export_back
 
 echo BUILD_LEADER=$BUILD_LEADER

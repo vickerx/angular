@@ -42,18 +42,18 @@ declare module Intl {
 }
 
 export enum NumberFormatStyle {
-  DECIMAL,
-  PERCENT,
-  CURRENCY
+  Decimal,
+  Percent,
+  Currency
 }
 
 export class NumberFormatter {
-  static format(number: number, locale: string, style: NumberFormatStyle,
+  static format(num: number, locale: string, style: NumberFormatStyle,
                 {minimumIntegerDigits = 1, minimumFractionDigits = 0, maximumFractionDigits = 3,
                  currency, currencyAsSymbol = false}: {
-                  minimumIntegerDigits?: int,
-                  minimumFractionDigits?: int,
-                  maximumFractionDigits?: int,
+                  minimumIntegerDigits?: number,
+                  minimumFractionDigits?: number,
+                  maximumFractionDigits?: number,
                   currency?: string,
                   currencyAsSymbol?: boolean
                 } = {}): string {
@@ -63,18 +63,18 @@ export class NumberFormatter {
       maximumFractionDigits: maximumFractionDigits
     };
     intlOptions.style = NumberFormatStyle[style].toLowerCase();
-    if (style == NumberFormatStyle.CURRENCY) {
+    if (style == NumberFormatStyle.Currency) {
       intlOptions.currency = currency;
       intlOptions.currencyDisplay = currencyAsSymbol ? 'symbol' : 'code';
     }
-    return new Intl.NumberFormat(locale, intlOptions).format(number);
+    return new Intl.NumberFormat(locale, intlOptions).format(num);
   }
 }
 
-function digitCondition(len: int): string {
+function digitCondition(len: number): string {
   return len == 2 ? '2-digit' : 'numeric';
 }
-function nameCondition(len: int): string {
+function nameCondition(len: number): string {
   return len < 4 ? 'short' : 'long';
 }
 function extractComponents(pattern: string): Intl.DateTimeFormatOptions {

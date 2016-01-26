@@ -4,36 +4,18 @@ import {
   RegExpMatcherWrapper,
   StringWrapper,
   isPresent,
-  isBlank,
-  BaseException
+  isBlank
 } from 'angular2/src/facade/lang';
-import {Promise, PromiseWrapper} from 'angular2/src/facade/async';
-import {
-  Map,
-  MapWrapper,
-  StringMap,
-  StringMapWrapper,
-  List,
-  ListWrapper
-} from 'angular2/src/facade/collection';
-import {IMPLEMENTS} from 'angular2/src/facade/lang';
-import {parseAndAssignParamString} from 'angular2/src/router/helpers';
-import {escapeRegex} from './url';
-import {RouteHandler} from './route_handler';
+import {BaseException, WrappedException} from 'angular2/src/facade/exceptions';
+import {Map, MapWrapper, StringMapWrapper} from 'angular2/src/facade/collection';
 
-// TODO(jeffbcross): implement as interface when ts2dart adds support:
-// https://github.com/angular/ts2dart/issues/173
-export class Segment {
-  name: string;
-  regex: string;
-  generate(params: TouchMap): string { return ''; }
-}
+import {Url, RootUrl, serializeParams} from './url_parser';
 
 class TouchMap {
-  map: StringMap<string, string> = StringMapWrapper.create();
-  keys: StringMap<string, boolean> = StringMapWrapper.create();
+  map: {[key: string]: string} = {};
+  keys: {[key: string]: boolean} = {};
 
-  constructor(map: StringMap<string, any>) {
+  constructor(map: {[key: string]: any}) {
     if (isPresent(map)) {
       StringMapWrapper.forEach(map, (value, key) => {
         this.map[key] = isPresent(value) ? value.toString() : null;
@@ -47,10 +29,10 @@ class TouchMap {
     return this.map[key];
   }
 
-  getUnused(): StringMap<string, any> {
-    var unused: StringMap<string, any> = StringMapWrapper.create();
+  getUnused(): {[key: string]: any} {
+    var unused: {[key: string]: any} = {};
     var keys = StringMapWrapper.keys(this.keys);
-    ListWrapper.forEach(keys, (key) => { unused[key] = StringMapWrapper.get(this.map, key); });
+    keys.forEach(key => unused[key] = StringMapWrapper.get(this.map, key));
     return unused;
   }
 }
@@ -63,31 +45,28 @@ function normalizeString(obj: any): string {
   }
 }
 
-class ContinuationSegment extends Segment {}
-
-class StaticSegment extends Segment {
-  regex: string;
-  name: string = '';
-
-  constructor(public string: string) {
-    super();
-    this.regex = escapeRegex(string);
-
-    // we add this property so that the route matcher still sees
-    // this segment as a valid path even if do not use the matrix
-    // parameters
-    this.regex += '(;[^\/]+)?';
-  }
-
-  generate(params: TouchMap): string { return this.string; }
+interface Segment {
+  name: string;
+  generate(params: TouchMap): string;
+  match(path: string): boolean;
 }
 
-@IMPLEMENTS(Segment)
-class DynamicSegment {
-  regex: string = "([^/]+)";
+class ContinuationSegment implements Segment {
+  name: string = '';
+  generate(params: TouchMap): string { return ''; }
+  match(path: string): boolean { return true; }
+}
 
+class StaticSegment implements Segment {
+  name: string = '';
+  constructor(public path: string) {}
+  match(path: string): boolean { return path == this.path; }
+  generate(params: TouchMap): string { return this.path; }
+}
+
+class DynamicSegment implements Segment {
   constructor(public name: string) {}
-
+  match(path: string): boolean { return path.length > 0; }
   generate(params: TouchMap): string {
     if (!StringMapWrapper.contains(params.map, this.name)) {
       throw new BaseException(
@@ -98,11 +77,9 @@ class DynamicSegment {
 }
 
 
-class StarSegment {
-  regex: string = "(.+)";
-
+class StarSegment implements Segment {
   constructor(public name: string) {}
-
+  match(path: string): boolean { return true; }
   generate(params: TouchMap): string { return normalizeString(params.get(this.name)); }
 }
 
@@ -110,30 +87,31 @@ class StarSegment {
 var paramMatcher = /^:([^\/]+)$/g;
 var wildcardMatcher = /^\*([^\/]+)$/g;
 
-function parsePathString(route: string): StringMap<string, any> {
+function parsePathString(route: string): {[key: string]: any} {
   // normalize route as not starting with a "/". Recognition will
   // also normalize.
-  if (StringWrapper.startsWith(route, "/")) {
-    route = StringWrapper.substring(route, 1);
+  if (route.startsWith("/")) {
+    route = route.substring(1);
   }
 
   var segments = splitBySlash(route);
   var results = [];
-  var specificity = 0;
+
+  var specificity = '';
+
+  // a single slash (or "empty segment" is as specific as a static segment
+  if (segments.length == 0) {
+    specificity += '2';
+  }
 
   // The "specificity" of a path is used to determine which route is used when multiple routes match
-  // a URL.
-  // Static segments (like "/foo") are the most specific, followed by dynamic segments (like
-  // "/:id"). Star segments
-  // add no specificity. Segments at the start of the path are more specific than proceeding ones.
+  // a URL. Static segments (like "/foo") are the most specific, followed by dynamic segments (like
+  // "/:id"). Star segments add no specificity. Segments at the start of the path are more specific
+  // than proceeding ones.
+  //
   // The code below uses place values to combine the different types of segments into a single
-  // integer that we can
-  // sort later. Each static segment is worth hundreds of points of specificity (10000, 9900, ...,
-  // 200), and each
-  // dynamic segment is worth single points of specificity (100, 99, ... 2).
-  if (segments.length > 98) {
-    throw new BaseException(`'${route}' has more than the maximum supported number of segments.`);
-  }
+  // string that we can sort later. Each static segment is marked as a specificity of "2," each
+  // dynamic segment is worth "1" specificity, and stars are worth "0" specificity.
 
   var limit = segments.length - 1;
   for (var i = 0; i <= limit; i++) {
@@ -141,27 +119,42 @@ function parsePathString(route: string): StringMap<string, any> {
 
     if (isPresent(match = RegExpWrapper.firstMatch(paramMatcher, segment))) {
       results.push(new DynamicSegment(match[1]));
-      specificity += (100 - i);
+      specificity += '1';
     } else if (isPresent(match = RegExpWrapper.firstMatch(wildcardMatcher, segment))) {
       results.push(new StarSegment(match[1]));
+      specificity += '0';
     } else if (segment == '...') {
       if (i < limit) {
-        // TODO (matsko): setup a proper error here `
         throw new BaseException(`Unexpected "..." before the end of the path for "${route}".`);
       }
       results.push(new ContinuationSegment());
-    } else if (segment.length > 0) {
+    } else {
       results.push(new StaticSegment(segment));
-      specificity += 100 * (100 - i);
+      specificity += '2';
     }
   }
-  var result = StringMapWrapper.create();
-  StringMapWrapper.set(result, 'segments', results);
-  StringMapWrapper.set(result, 'specificity', specificity);
-  return result;
+
+  return {'segments': results, 'specificity': specificity};
 }
 
-function splitBySlash(url: string): List<string> {
+// this function is used to determine whether a route config path like `/foo/:id` collides with
+// `/foo/:name`
+function pathDslHash(segments: Segment[]): string {
+  return segments.map((segment) => {
+                   if (segment instanceof StarSegment) {
+                     return '*';
+                   } else if (segment instanceof ContinuationSegment) {
+                     return '...';
+                   } else if (segment instanceof DynamicSegment) {
+                     return ':';
+                   } else if (segment instanceof StaticSegment) {
+                     return segment.path;
+                   }
+                 })
+      .join('/');
+}
+
+function splitBySlash(url: string): string[] {
   return url.split('/');
 }
 
@@ -178,125 +171,110 @@ function assertPath(path: string) {
   }
 }
 
-// represents something like '/foo/:bar'
+
+/**
+ * Parses a URL string using a given matcher DSL, and generates URLs from param maps
+ */
 export class PathRecognizer {
-  segments: List<Segment>;
-  regex: RegExp;
-  specificity: number;
+  private _segments: Segment[];
+  specificity: string;
   terminal: boolean = true;
+  hash: string;
 
-  static matrixRegex: RegExp = RegExpWrapper.create('^(.*\/[^\/]+?)(;[^\/]+)?\/?$');
-  static queryRegex: RegExp = RegExpWrapper.create('^(.*\/[^\/]+?)(\\?[^\/]+)?$');
-
-  constructor(public path: string, public handler: RouteHandler, public isRoot: boolean = false) {
+  constructor(public path: string) {
     assertPath(path);
     var parsed = parsePathString(path);
-    var specificity = parsed['specificity'];
-    var segments = parsed['segments'];
-    var regexString = '^';
 
-    ListWrapper.forEach(segments, (segment) => {
-      if (segment instanceof ContinuationSegment) {
-        this.terminal = false;
-      } else {
-        regexString += '/' + segment.regex;
-      }
-    });
+    this._segments = parsed['segments'];
+    this.specificity = parsed['specificity'];
+    this.hash = pathDslHash(this._segments);
 
-    if (this.terminal) {
-      regexString += '$';
-    }
-
-    this.regex = RegExpWrapper.create(regexString);
-    this.segments = segments;
-    this.specificity = specificity;
+    var lastSegment = this._segments[this._segments.length - 1];
+    this.terminal = !(lastSegment instanceof ContinuationSegment);
   }
 
-  parseParams(url: string): StringMap<string, string> {
-    // the last segment is always the star one since it's terminal
-    var segmentsLimit = this.segments.length - 1;
-    var containsStarSegment =
-        segmentsLimit >= 0 && this.segments[segmentsLimit] instanceof StarSegment;
+  recognize(beginningSegment: Url): {[key: string]: any} {
+    var nextSegment = beginningSegment;
+    var currentSegment: Url;
+    var positionalParams = {};
+    var captured = [];
 
-    var paramsString, useQueryString = this.isRoot && this.terminal;
-    if (!containsStarSegment) {
-      var matches = RegExpWrapper.firstMatch(
-          useQueryString ? PathRecognizer.queryRegex : PathRecognizer.matrixRegex, url);
-      if (isPresent(matches)) {
-        url = matches[1];
-        paramsString = matches[2];
-      }
+    for (var i = 0; i < this._segments.length; i += 1) {
+      var segment = this._segments[i];
 
-      url = StringWrapper.replaceAll(url, /(;[^\/]+)(?=(\/|$))/g, '');
-    }
-
-    var params = StringMapWrapper.create();
-    var urlPart = url;
-
-    for (var i = 0; i <= segmentsLimit; i++) {
-      var segment = this.segments[i];
+      currentSegment = nextSegment;
       if (segment instanceof ContinuationSegment) {
-        continue;
+        break;
       }
 
-      var match = RegExpWrapper.firstMatch(RegExpWrapper.create('/' + segment.regex), urlPart);
-      urlPart = StringWrapper.substring(urlPart, match[0].length);
-      if (segment.name.length > 0) {
-        params[segment.name] = match[1];
+      if (isPresent(currentSegment)) {
+        captured.push(currentSegment.path);
+
+        // the star segment consumes all of the remaining URL, including matrix params
+        if (segment instanceof StarSegment) {
+          positionalParams[segment.name] = currentSegment.toString();
+          nextSegment = null;
+          break;
+        }
+
+        if (segment instanceof DynamicSegment) {
+          positionalParams[segment.name] = currentSegment.path;
+        } else if (!segment.match(currentSegment.path)) {
+          return null;
+        }
+
+        nextSegment = currentSegment.child;
+      } else if (!segment.match('')) {
+        return null;
       }
     }
 
-    if (isPresent(paramsString) && paramsString.length > 0) {
-      var expectedStartingValue = useQueryString ? '?' : ';';
-      if (paramsString[0] == expectedStartingValue) {
-        parseAndAssignParamString(expectedStartingValue, paramsString, params);
-      }
+    if (this.terminal && isPresent(nextSegment)) {
+      return null;
     }
 
-    return params;
+    var urlPath = captured.join('/');
+
+    var auxiliary;
+    var urlParams;
+    var allParams;
+    if (isPresent(currentSegment)) {
+      // If this is the root component, read query params. Otherwise, read matrix params.
+      var paramsSegment = beginningSegment instanceof RootUrl ? beginningSegment : currentSegment;
+
+      allParams = isPresent(paramsSegment.params) ?
+                      StringMapWrapper.merge(paramsSegment.params, positionalParams) :
+                      positionalParams;
+
+      urlParams = serializeParams(paramsSegment.params);
+
+
+      auxiliary = currentSegment.auxiliary;
+    } else {
+      allParams = positionalParams;
+      auxiliary = [];
+      urlParams = [];
+    }
+    return {urlPath, urlParams, allParams, auxiliary, nextSegment};
   }
 
-  generate(params: StringMap<string, any>): string {
+
+  generate(params: {[key: string]: any}): {[key: string]: any} {
     var paramTokens = new TouchMap(params);
-    var applyLeadingSlash = false;
-    var useQueryString = this.isRoot && this.terminal;
 
-    var url = '';
-    for (var i = 0; i < this.segments.length; i++) {
-      let segment = this.segments[i];
-      let s = segment.generate(paramTokens);
-      applyLeadingSlash = applyLeadingSlash || (segment instanceof ContinuationSegment);
+    var path = [];
 
-      if (s.length > 0) {
-        url += (i > 0 ? '/' : '') + s;
+    for (var i = 0; i < this._segments.length; i++) {
+      let segment = this._segments[i];
+      if (!(segment instanceof ContinuationSegment)) {
+        path.push(segment.generate(paramTokens));
       }
     }
+    var urlPath = path.join('/');
 
-    var unusedParams = paramTokens.getUnused();
-    if (!StringMapWrapper.isEmpty(unusedParams)) {
-      url += useQueryString ? '?' : ';';
-      var paramToken = useQueryString ? '&' : ';';
-      var i = 0;
-      StringMapWrapper.forEach(unusedParams, (value, key) => {
-        if (i++ > 0) {
-          url += paramToken;
-        }
-        url += key;
-        if (!isPresent(value) && useQueryString) {
-          value = 'true';
-        }
-        if (isPresent(value)) {
-          url += '=' + value;
-        }
-      });
-    }
+    var nonPositionalParams = paramTokens.getUnused();
+    var urlParams = serializeParams(nonPositionalParams);
 
-    if (applyLeadingSlash) {
-      url += '/';
-    }
-
-    return url;
+    return {urlPath, urlParams};
   }
-
-  resolveComponentType(): Promise<any> { return this.handler.resolveComponentType(); }
 }

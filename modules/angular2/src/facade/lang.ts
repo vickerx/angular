@@ -1,63 +1,81 @@
-/// <reference path="../../globals.d.ts" />
-var _global: BrowserNodeGlobal = <any>(typeof window === 'undefined' ? global : window);
+// TODO(jteplitz602): Load WorkerGlobalScope from lib.webworker.d.ts file #3492
+declare var WorkerGlobalScope;
+var globalScope: BrowserNodeGlobal;
+if (typeof window === 'undefined') {
+  if (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope) {
+    // TODO: Replace any with WorkerGlobalScope from lib.webworker.d.ts #3492
+    globalScope = <any>self;
+  } else {
+    globalScope = <any>global;
+  }
+} else {
+  globalScope = <any>window;
+};
+
+export const IS_DART = false;
+
+// Need to declare a new variable for global here since TypeScript
+// exports the original value of the symbol.
+var _global: BrowserNodeGlobal = globalScope;
+
 export {_global as global};
 
 export var Type = Function;
 
 /**
- * Runtime representation of a type.
+ * Runtime representation a type that a Component or other object is instances of.
  *
- * In JavaScript a Type is a constructor function.
+ * An example of a `Type` is `MyCustomComponent` class, which in JavaScript is be represented by
+ * the `MyCustomComponent` constructor function.
  */
-export interface Type extends Function { new (...args): any; }
+export interface Type extends Function {}
+
+/**
+ * Runtime representation of a type that is constructable (non-abstract).
+ */
+export interface ConcreteType extends Type { new (...args): any; }
 
 export function getTypeNameForDebugging(type: Type): string {
   return type['name'];
 }
 
-export var isDart = false;
-
-export class BaseException extends Error {
-  stack;
-  constructor(public message?: string, private _originalException?, private _originalStack?,
-              private _context?) {
-    super(message);
-    this.stack = (<any>new Error(message)).stack;
-  }
-
-  get originalException(): any { return this._originalException; }
-
-  get originalStack(): any { return this._originalStack; }
-
-  get context(): any { return this._context; }
-
-  toString(): string { return this.message; }
-}
-
-export function makeTypeError(message?: string): Error {
-  return new TypeError(message);
-}
 
 export var Math = _global.Math;
 export var Date = _global.Date;
 
-var assertionsEnabled_ = typeof _global['assert'] !== 'undefined';
+var _devMode: boolean = true;
+var _modeLocked: boolean = false;
+
+export function lockMode() {
+  _modeLocked = true;
+}
+
+/**
+ * Disable Angular's development mode, which turns off assertions and other
+ * checks within the framework.
+ *
+ * One important assertion this disables verifies that a change detection pass
+ * does not result in additional changes to any bindings (also known as
+ * unidirectional data flow).
+ */
+export function enableProdMode() {
+  if (_modeLocked) {
+    // Cannot use BaseException as that ends up importing from facade/lang.
+    throw 'Cannot enable prod mode after platform setup.';
+  }
+  _devMode = false;
+}
+
 export function assertionsEnabled(): boolean {
-  return assertionsEnabled_;
+  return _devMode;
 }
 
 // TODO: remove calls to assert in production environment
 // Note: Can't just export this and import in in other files
 // as `assert` is a reserved keyword in Dart
 _global.assert = function assert(condition) {
-  if (assertionsEnabled_) {
-    _global['assert'].call(condition);
-  }
+  // TODO: to be fixed properly via #2830, noop for now
 };
-
-export function ENUM_INDEX(value: int): int {
-  return value;
-}
 
 // This function is needed only to properly support Dart's const expressions
 // see https://github.com/angular/ts2dart/pull/151 for more info
@@ -65,19 +83,8 @@ export function CONST_EXPR<T>(expr: T): T {
   return expr;
 }
 
-export function CONST(): ClassDecorator {
+export function CONST(): ClassDecorator & PropertyDecorator {
   return (target) => target;
-}
-
-export function ABSTRACT(): ClassDecorator {
-  return (t) => t;
-}
-
-// Note: This is only a marker annotation needed for ts2dart.
-// This is written so that is can be used as a Traceur annotation
-// or a Typescript decorator.
-export function IMPLEMENTS(_): ClassDecorator {
-  return (t) => t;
 }
 
 export function isPresent(obj: any): boolean {
@@ -120,6 +127,8 @@ export function isDate(obj): boolean {
   return obj instanceof Date && !isNaN(obj.valueOf());
 }
 
+export function noop() {}
+
 export function stringify(token): string {
   if (typeof token === 'string') {
     return token;
@@ -132,6 +141,9 @@ export function stringify(token): string {
   if (token.name) {
     return token.name;
   }
+  if (token.overriddenName) {
+    return token.overriddenName;
+  }
 
   var res = token.toString();
   var newLineIndex = res.indexOf("\n");
@@ -141,22 +153,46 @@ export function stringify(token): string {
 // serialize / deserialize enum exist only for consistency with dart API
 // enums in typescript don't need to be serialized
 
-export function serializeEnum(val): int {
+export function serializeEnum(val): number {
   return val;
 }
 
-export function deserializeEnum(val, values: Map<int, any>): any {
+export function deserializeEnum(val, values: Map<number, any>): any {
   return val;
 }
 
 export class StringWrapper {
-  static fromCharCode(code: int): string { return String.fromCharCode(code); }
+  static fromCharCode(code: number): string { return String.fromCharCode(code); }
 
-  static charCodeAt(s: string, index: int): number { return s.charCodeAt(index); }
+  static charCodeAt(s: string, index: number): number { return s.charCodeAt(index); }
 
-  static split(s: string, regExp: RegExp): List<string> { return s.split(regExp); }
+  static split(s: string, regExp: RegExp): string[] { return s.split(regExp); }
 
   static equals(s: string, s2: string): boolean { return s === s2; }
+
+  static stripLeft(s: string, charVal: string): string {
+    if (s && s.length) {
+      var pos = 0;
+      for (var i = 0; i < s.length; i++) {
+        if (s[i] != charVal) break;
+        pos++;
+      }
+      s = s.substring(pos);
+    }
+    return s;
+  }
+
+  static stripRight(s: string, charVal: string): string {
+    if (s && s.length) {
+      var pos = s.length;
+      for (var i = s.length - 1; i >= 0; i--) {
+        if (s[i] != charVal) break;
+        pos--;
+      }
+      s = s.substring(0, pos);
+    }
+    return s;
+  }
 
   static replace(s: string, from: string, replace: string): string {
     return s.replace(from, replace);
@@ -166,14 +202,8 @@ export class StringWrapper {
     return s.replace(from, replace);
   }
 
-  static toUpperCase(s: string): string { return s.toUpperCase(); }
-
-  static toLowerCase(s: string): string { return s.toLowerCase(); }
-
-  static startsWith(s: string, start: string): boolean { return s.startsWith(start); }
-
-  static substring(s: string, start: int, end: int = null): string {
-    return s.substring(start, end === null ? undefined : end);
+  static slice<T>(s: string, from: number = 0, to: number = null): string {
+    return s.slice(from, to === null ? undefined : to);
   }
 
   static replaceAllMapped(s: string, from: RegExp, cb: Function): string {
@@ -187,7 +217,7 @@ export class StringWrapper {
 
   static contains(s: string, substr: string): boolean { return s.indexOf(substr) != -1; }
 
-  static compare(a: string, b: string): int {
+  static compare(a: string, b: string): number {
     if (a < b) {
       return -1;
     } else if (a > b) {
@@ -206,7 +236,7 @@ export class StringJoiner {
   toString(): string { return this.parts.join(""); }
 }
 
-export class NumberParseError extends BaseException {
+export class NumberParseError extends Error {
   name: string;
 
   constructor(public message: string) { super(); }
@@ -216,19 +246,19 @@ export class NumberParseError extends BaseException {
 
 
 export class NumberWrapper {
-  static toFixed(n: number, fractionDigits: int): string { return n.toFixed(fractionDigits); }
+  static toFixed(n: number, fractionDigits: number): string { return n.toFixed(fractionDigits); }
 
   static equal(a: number, b: number): boolean { return a === b; }
 
-  static parseIntAutoRadix(text: string): int {
-    var result: int = parseInt(text);
+  static parseIntAutoRadix(text: string): number {
+    var result: number = parseInt(text);
     if (isNaN(result)) {
       throw new NumberParseError("Invalid integer literal when parsing " + text);
     }
     return result;
   }
 
-  static parseInt(text: string, radix: int): int {
+  static parseInt(text: string, radix: number): number {
     if (radix == 10) {
       if (/^(\-|\+)?[0-9]+$/.test(text)) {
         return parseInt(text, radix);
@@ -238,7 +268,7 @@ export class NumberWrapper {
         return parseInt(text, radix);
       }
     } else {
-      var result: int = parseInt(text, radix);
+      var result: number = parseInt(text, radix);
       if (!isNaN(result)) {
         return result;
       }
@@ -264,7 +294,7 @@ export class RegExpWrapper {
     flags = flags.replace(/g/g, '');
     return new _global.RegExp(regExpStr, flags + 'g');
   }
-  static firstMatch(regExp: RegExp, input: string): List<string> {
+  static firstMatch(regExp: RegExp, input: string): RegExpExecArray {
     // Reset multimatch regex state
     regExp.lastIndex = 0;
     return regExp.exec(input);
@@ -290,7 +320,7 @@ export class RegExpMatcherWrapper {
   static next(matcher: {
     re: RegExp;
     input: string
-  }): string[] {
+  }): RegExpExecArray {
     return matcher.re.exec(matcher.input);
   }
 }
@@ -323,11 +353,7 @@ export function isJsObject(o: any): boolean {
 }
 
 export function print(obj: Error | Object) {
-  if (obj instanceof BaseException) {
-    console.log(obj.stack);
-  } else {
-    console.log(obj);
-  }
+  console.log(obj);
 }
 
 // Can't be all uppercase as our transpiler would think it is a special directive...
@@ -340,12 +366,64 @@ export class Json {
 }
 
 export class DateWrapper {
-  static create(year: int, month: int = 1, day: int = 1, hour: int = 0, minutes: int = 0,
-                seconds: int = 0, milliseconds: int = 0): Date {
+  static create(year: number, month: number = 1, day: number = 1, hour: number = 0,
+                minutes: number = 0, seconds: number = 0, milliseconds: number = 0): Date {
     return new Date(year, month - 1, day, hour, minutes, seconds, milliseconds);
   }
-  static fromMillis(ms: int): Date { return new Date(ms); }
-  static toMillis(date: Date): int { return date.getTime(); }
+  static fromISOString(str: string): Date { return new Date(str); }
+  static fromMillis(ms: number): Date { return new Date(ms); }
+  static toMillis(date: Date): number { return date.getTime(); }
   static now(): Date { return new Date(); }
   static toJson(date: Date): string { return date.toJSON(); }
+}
+
+export function setValueOnPath(global: any, path: string, value: any) {
+  var parts = path.split('.');
+  var obj: any = global;
+  while (parts.length > 1) {
+    var name = parts.shift();
+    if (obj.hasOwnProperty(name) && isPresent(obj[name])) {
+      obj = obj[name];
+    } else {
+      obj = obj[name] = {};
+    }
+  }
+  if (obj === undefined || obj === null) {
+    obj = {};
+  }
+  obj[parts.shift()] = value;
+}
+
+// When Symbol.iterator doesn't exist, retrieves the key used in es6-shim
+declare var Symbol;
+var _symbolIterator = null;
+export function getSymbolIterator(): string | symbol {
+  if (isBlank(_symbolIterator)) {
+    if (isPresent(Symbol) && isPresent(Symbol.iterator)) {
+      _symbolIterator = Symbol.iterator;
+    } else {
+      // es6-shim specific logic
+      var keys = Object.getOwnPropertyNames(Map.prototype);
+      for (var i = 0; i < keys.length; ++i) {
+        var key = keys[i];
+        if (key !== 'entries' && key !== 'size' &&
+            Map.prototype[key] === Map.prototype['entries']) {
+          _symbolIterator = key;
+        }
+      }
+    }
+  }
+  return _symbolIterator;
+}
+
+export function evalExpression(sourceUrl: string, expr: string, declarations: string,
+                               vars: {[key: string]: any}): any {
+  var fnBody = `${declarations}\nreturn ${expr}\n//# sourceURL=${sourceUrl}`;
+  var fnArgNames = [];
+  var fnArgValues = [];
+  for (var argName in vars) {
+    fnArgNames.push(argName);
+    fnArgValues.push(vars[argName]);
+  }
+  return new Function(...fnArgNames.concat(fnBody))(...fnArgValues);
 }

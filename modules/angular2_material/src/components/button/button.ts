@@ -1,15 +1,16 @@
-import {Component, View, LifecycleEvent, ViewEncapsulation} from 'angular2/angular2';
+import {Component, View, ViewEncapsulation, OnChanges} from 'angular2/core';
 
 import {TimerWrapper} from 'angular2/src/facade/async';
 import {isPresent} from 'angular2/src/facade/lang';
 
+
 // TODO(jelbourn): Ink ripples.
-// TODO(jelbourn): Make the `isMosueDown` stuff done with one global listener.
+// TODO(jelbourn): Make the `isMouseDown` stuff done with one global listener.
 
 @Component({
-  selector: '[md-button]:not(a), [md-fab]:not(a), [md-raised-button]:not(a)',
+  selector: '[mdButton]:not(a), [mdFab]:not(a), [mdRaisedButton]:not(a)',
   host: {
-    '(^mousedown)': 'onMousedown()',
+    '(mousedown)': 'onMousedown()',
     '(focus)': 'onFocus()',
     '(blur)': 'onBlur()',
     '[class.md-button-focus]': 'isKeyboardFocused',
@@ -17,10 +18,11 @@ import {isPresent} from 'angular2/src/facade/lang';
 })
 @View({
   templateUrl: 'package:angular2_material/src/components/button/button.html',
-  encapsulation: ViewEncapsulation.NONE,
+  styleUrls: ['package:angular2_material/src/components/button/button.css'],
+  encapsulation: ViewEncapsulation.None,
 })
 export class MdButton {
-  /** Whether a mousedown has occured on this element in the last 100ms. */
+  /** Whether a mousedown has occurred on this element in the last 100ms. */
   isMouseDown: boolean = false;
 
   /** Whether the button has focus from the keyboard (not the mouse). Used for class binding. */
@@ -46,27 +48,24 @@ export class MdButton {
 
 
 @Component({
-  selector: 'a[md-button], a[md-raised-button], a[md-fab]',
-  properties: ['disabled'],
-  lifecycle: [LifecycleEvent.onChange],
+  selector: 'a[mdButton], a[mdRaisedButton], a[mdFab]',
+  inputs: ['disabled'],
   host: {
-    '(^click)': 'onClick($event)',
-    '(^mousedown)': 'onMousedown()',
+    '(click)': 'onClick($event)',
+    '(mousedown)': 'onMousedown()',
     '(focus)': 'onFocus()',
     '(blur)': 'onBlur()',
     '[tabIndex]': 'tabIndex',
     '[class.md-button-focus]': 'isKeyboardFocused',
-    '[attr.aria-disabled]': 'disabled',
+    '[attr.aria-disabled]': 'isAriaDisabled',
   },
 })
 @View({
   templateUrl: 'package:angular2_material/src/components/button/button.html',
-  encapsulation: ViewEncapsulation.NONE
+  encapsulation: ViewEncapsulation.None
 })
-export class MdAnchor extends MdButton {
+export class MdAnchor extends MdButton implements OnChanges {
   tabIndex: number;
-
-  /** Whether the component is disabled. */
   disabled_: boolean;
 
   get disabled(): boolean {
@@ -86,8 +85,13 @@ export class MdAnchor extends MdButton {
   }
 
   /** Invoked when a change is detected. */
-  onChange(_) {
+  ngOnChanges(_) {
     // A disabled anchor should not be in the tab flow.
     this.tabIndex = this.disabled ? -1 : 0;
+  }
+
+  /** Gets the aria-disabled value for the component, which must be a string for Dart. */
+  get isAriaDisabled(): string {
+    return this.disabled ? 'true' : 'false';
   }
 }

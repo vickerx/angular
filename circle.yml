@@ -1,0 +1,6 @@
+machine:
+  node:
+    version: 5.4.1
+test:
+  override:
+    - npm run build

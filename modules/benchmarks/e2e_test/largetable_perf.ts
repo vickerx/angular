@@ -1,4 +1,4 @@
-import {runClickBenchmark, verifyNoBrowserErrors} from 'angular2/src/test_lib/perf_util';
+import {runClickBenchmark, verifyNoBrowserErrors} from 'angular2/src/testing/perf_util';
 
 describe('ng2 largetable benchmark', function() {
 
@@ -28,21 +28,6 @@ describe('ng2 largetable benchmark', function() {
       }).then(done, done.fail);
     });
   });
-
-  it('should log the stats without viewcache', function(done) {
-    runClickBenchmark({
-      url: URL,
-      buttons: ['#ng2DestroyDom', '#ng2CreateDom'],
-      id: 'ng2.largetable.interpolation.plain',
-      params: [
-        {name: 'rows', value: 20, scale: 'sqrt'},
-        {name: 'columns', value: 20, scale: 'sqrt'},
-        {name: 'benchmarkType', value: 'interpolation'},
-        {name: 'viewcache', value: 'false'}
-      ]
-    }).then(done, done.fail);
-  });
-
 
   it('should log the baseline stats', function(done) {
     runClickBenchmark({

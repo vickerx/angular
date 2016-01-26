@@ -4,23 +4,25 @@ import 'package:intl/intl.dart';
 
 String _normalizeLocale(String locale) => locale.replaceAll('-', '_');
 
-enum NumberFormatStyle { DECIMAL, PERCENT, CURRENCY }
+enum NumberFormatStyle { Decimal, Percent, Currency }
 
 class NumberFormatter {
   static String format(num number, String locale, NumberFormatStyle style,
-      {int minimumIntegerDigits: 1, int minimumFractionDigits: 0,
-      int maximumFractionDigits: 3, String currency,
+      {int minimumIntegerDigits: 1,
+      int minimumFractionDigits: 0,
+      int maximumFractionDigits: 3,
+      String currency,
       bool currencyAsSymbol: false}) {
     locale = _normalizeLocale(locale);
     NumberFormat formatter;
     switch (style) {
-      case NumberFormatStyle.DECIMAL:
+      case NumberFormatStyle.Decimal:
         formatter = new NumberFormat.decimalPattern(locale);
         break;
-      case NumberFormatStyle.PERCENT:
+      case NumberFormatStyle.Percent:
         formatter = new NumberFormat.percentPattern(locale);
         break;
-      case NumberFormatStyle.CURRENCY:
+      case NumberFormatStyle.Currency:
         if (currencyAsSymbol) {
           // See https://github.com/dart-lang/intl/issues/59.
           throw new Exception(

@@ -14,7 +14,7 @@ var assertEventsContainsName = function(events, eventName) {
 };
 
 describe('firefox extension', function() {
-  var TEST_URL = 'http://localhost:8001/examples/src/hello_world/index.html';
+  var TEST_URL = 'http://localhost:8001/playground/src/hello_world/index.html';
 
   it('should measure performance', function() {
     browser.sleep(3000);  // wait for extension to load
@@ -24,6 +24,7 @@ describe('firefox extension', function() {
     browser.executeScript('window.startProfiler()')
         .then(function() { console.log('started measuring perf'); });
 
+    browser.executeAsyncScript('setTimeout(arguments[0], 1000);');
     browser.executeScript('window.forceGC()');
 
     browser.executeAsyncScript('var cb = arguments[0]; window.getProfile(cb);')

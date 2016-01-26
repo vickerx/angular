@@ -5,28 +5,20 @@ import 'dart:math' as math;
 import 'dart:convert' as convert;
 import 'dart:async' show Future;
 
-bool isDart = true;
-
 String getTypeNameForDebugging(Type type) => type.toString();
 
 class Math {
   static final _random = new math.Random();
   static int floor(num n) => n.floor();
   static double random() => _random.nextDouble();
+  static num min(num a, num b) => math.min(a, b);
 }
-
-int ENUM_INDEX(value) => value.index;
 
 class CONST {
   const CONST();
 }
-class ABSTRACT {
-  const ABSTRACT();
-}
-class IMPLEMENTS {
-  final interfaceClass;
-  const IMPLEMENTS(this.interfaceClass);
-}
+
+const IS_DART = true;
 
 bool isPresent(obj) => obj != null;
 bool isBlank(obj) => obj == null;
@@ -39,7 +31,15 @@ bool isPromise(obj) => obj is Future;
 bool isNumber(obj) => obj is num;
 bool isDate(obj) => obj is DateTime;
 
-String stringify(obj) => obj.toString();
+String stringify(obj) {
+  final exp = new RegExp(r"from Function '(\w+)'");
+  final str = obj.toString();
+  if (exp.firstMatch(str) != null) {
+    return exp.firstMatch(str).group(1);
+  } else {
+    return str;
+  }
+}
 
 int serializeEnum(val) {
   return val.index;
@@ -50,7 +50,7 @@ int serializeEnum(val) {
  * val should be the indexed value of the enum (sa returned from @Link{serializeEnum})
  * values should be a map from indexes to values for the enum that you want to deserialize.
  */
-dynamic deserializeEnum(int val, Map<int, dynamic> values) {
+dynamic deserializeEnum(num val, Map<num, dynamic> values) {
   return values[val];
 }
 
@@ -81,6 +81,30 @@ class StringWrapper {
     return s == s2;
   }
 
+  static String stripLeft(String s, String charVal) {
+    if (isPresent(s) && s.length > 0) {
+      var pos = 0;
+      for (var i = 0; i < s.length; i++) {
+        if (s[i] != charVal) break;
+        pos++;
+      }
+      s = s.substring(pos);
+    }
+    return s;
+  }
+
+  static String stripRight(String s, String charVal) {
+    if (isPresent(s) && s.length > 0) {
+      var pos = s.length;
+      for (var i = s.length - 1; i >= 0; i--) {
+        if (s[i] != charVal) break;
+        pos--;
+      }
+      s = s.substring(0, pos);
+    }
+    return s;
+  }
+
   static String replace(String s, Pattern from, String replace) {
     return s.replaceFirst(from, replace);
   }
@@ -89,19 +113,13 @@ class StringWrapper {
     return s.replaceAll(from, replace);
   }
 
-  static String toUpperCase(String s) {
-    return s.toUpperCase();
-  }
-
-  static String toLowerCase(String s) {
-    return s.toLowerCase();
-  }
-
-  static startsWith(String s, String start) {
-    return s.startsWith(start);
-  }
-
-  static String substring(String s, int start, [int end]) {
+  static String slice(String s, [int start = 0, int end]) {
+    start = _startOffset(s, start);
+    end = _endOffset(s, end);
+    //in JS if start > end an empty string is returned
+    if (end != null && start > end) {
+      return "";
+    }
     return s.substring(start, end);
   }
 
@@ -114,6 +132,21 @@ class StringWrapper {
   }
 
   static int compare(String a, String b) => a.compareTo(b);
+
+  // JS slice function can take start < 0 which indicates a position relative to
+  // the end of the string
+  static int _startOffset(String s, int start) {
+    int len = s.length;
+    return start < 0 ? math.max(len + start, 0) : math.min(start, len);
+  }
+
+  // JS slice function can take end < 0 which indicates a position relative to
+  // the end of the string
+  static int _endOffset(String s, int end) {
+    int len = s.length;
+    if (end == null) return len;
+    return end < 0 ? math.max(len + end, 0) : math.min(end, len);
+  }
 }
 
 class StringJoiner {
@@ -161,12 +194,15 @@ class RegExpWrapper {
     return new RegExp(regExpStr,
         multiLine: multiLine, caseSensitive: caseSensitive);
   }
+
   static Match firstMatch(RegExp regExp, String input) {
     return regExp.firstMatch(input);
   }
+
   static bool test(RegExp regExp, String input) {
     return regExp.hasMatch(input);
   }
+
   static Iterator<Match> matcher(RegExp regExp, String input) {
     return regExp.allMatches(input).iterator;
   }
@@ -197,30 +233,28 @@ class FunctionWrapper {
   }
 }
 
-class BaseException extends Error {
-  final dynamic context;
-  final String message;
-  final originalException;
-  final originalStack;
-
-  BaseException(
-      [this.message, this.originalException, this.originalStack, this.context]);
-
-  String toString() {
-    return this.message;
-  }
-}
-
-Error makeTypeError([String message = ""]) {
-  return new BaseException(message);
-}
-
 const _NAN_KEY = const Object();
 
-// Dart can have identical(str1, str2) == false while str1 == str2. Moreover,
-// after compiling with dart2js identical(str1, str2) might return true.
-// (see dartbug.com/22496 for details).
-bool looseIdentical(a, b) =>
+// Dart VM implements `identical` as true reference identity. JavaScript does
+// not have this. The closest we have in JS is `===`. However, for strings JS
+// would actually compare the contents rather than references. `dart2js`
+// compiles `identical` to `===` and therefore there is a discrepancy between
+// Dart VM and `dart2js`. The implementation of `looseIdentical` attempts to
+// bridge the gap between the two while retaining good performance
+// characteristics. In JS we use simple `identical`, which compiles to `===`,
+// and in Dart VM we emulate the semantics of `===` by special-casing strings.
+// Note that the VM check is a compile-time constant. This allows `dart2js` to
+// evaluate the conditional during compilation and inline the entire function.
+//
+// See: dartbug.com/22496, dartbug.com/25270
+const _IS_DART_VM = !identical(1.0, 1);  // a hack
+bool looseIdentical(a, b) => _IS_DART_VM
+  ? _looseIdentical(a, b)
+  : identical(a, b);
+
+// This function is intentionally separated from `looseIdentical` to keep the
+// number of AST nodes low enough for `dart2js` to inline the code.
+bool _looseIdentical(a, b) =>
     a is String && b is String ? a == b : identical(a, b);
 
 // Dart compare map keys by equality and we can have NaN != NaN
@@ -240,17 +274,34 @@ bool isJsObject(o) {
   return false;
 }
 
-var _assertionsEnabled = null;
+// Functions below are noop in Dart. Imperatively controlling dev mode kills
+// tree shaking. We should only rely on `assertionsEnabled`.
+@Deprecated('Do not use this function. It is for JS only. There is no alternative.')
+void lockMode() {}
+@Deprecated('Do not use this function. It is for JS only. There is no alternative.')
+void enableDevMode() {}
+@Deprecated('Do not use this function. It is for JS only. There is no alternative.')
+void enableProdMode() {}
+
+/// Use this function to guard debugging code. When Dart is compiled in
+/// production mode, the code guarded using this function will be tree
+/// shaken away, reducing code size.
+///
+/// WARNING: DO NOT CHANGE THIS METHOD! This method is designed to have no
+/// more AST nodes than the maximum allowed by dart2js to inline it. In
+/// addition, the use of `assert` allows the compiler to statically compute
+/// the value returned by this function and tree shake conditions guarded by
+/// it.
+///
+/// Example:
+///
+/// if (assertionsEnabled()) {
+///   ...code here is tree shaken away in prod mode...
+/// }
 bool assertionsEnabled() {
-  if (_assertionsEnabled == null) {
-    try {
-      assert(false);
-      _assertionsEnabled = false;
-    } catch (e) {
-      _assertionsEnabled = true;
-    }
-  }
-  return _assertionsEnabled;
+  var k = false;
+  assert((k = true));
+  return k;
 }
 
 // Can't be all uppercase as our transpiler would think it is a special directive...
@@ -263,19 +314,32 @@ class Json {
 }
 
 class DateWrapper {
-  static DateTime create(int year, [int month = 1, int day = 1, int hour = 0,
-      int minutes = 0, int seconds = 0, int milliseconds = 0]) {
+  static DateTime create(int year,
+      [int month = 1,
+      int day = 1,
+      int hour = 0,
+      int minutes = 0,
+      int seconds = 0,
+      int milliseconds = 0]) {
     return new DateTime(year, month, day, hour, minutes, seconds, milliseconds);
   }
+
+  static DateTime fromISOString(String str) {
+    return DateTime.parse(str);
+  }
+
   static DateTime fromMillis(int ms) {
     return new DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true);
   }
+
   static int toMillis(DateTime date) {
     return date.millisecondsSinceEpoch;
   }
+
   static DateTime now() {
     return new DateTime.now();
   }
+
   static String toJson(DateTime date) {
     return date.toUtc().toIso8601String();
   }
@@ -283,3 +347,7 @@ class DateWrapper {
 
 // needed to match the exports from lang.js
 var global = null;
+
+dynamic evalExpression(String sourceUrl, String expr, String declarations, Map<String, String> vars) {
+  throw "Dart does not support evaluating expression during runtime!";
+}
